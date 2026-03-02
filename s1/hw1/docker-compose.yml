@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:17
+    container_name: petShopDb
+    environment:
+      POSTGRES_DB: petShopDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 2711
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
