@@ -126,7 +126,7 @@ EXPLAIN ANALYZE
 SELECT * FROM breed WHERE average_weight > 5.0 AND average_weight < 15.0;
 ``
 
-### 3. По возрасту питомцев
+### 4. По возрасту питомцев
 ``
 CREATE INDEX idx_pet_age_gist ON pet USING gist(age);
 ``
@@ -139,4 +139,99 @@ WHERE age BETWEEN 1 AND 3;
 ``
 EXPLAIN ANALYZE
 SELECT * FROM pet WHERE age >= 1 AND age <= 3;
+``
+
+### 5. По датам назначений
+``
+CREATE INDEX idx_keeper_assignments_date_gist ON keeper_assignments USING gist(assignment_date);
+``
+
+``
+SELECT * FROM keeper_assignments 
+WHERE assignment_date BETWEEN '2024-01-01' AND '2024-03-31';
+``
+
+``
+EXPLAIN ANALYZE
+SELECT * FROM keeper_assignments 
+WHERE assignment_date >= '2024-01-01' AND assignment_date <= '2024-03-31';
+``
+
+## JOIN запросы
+### 1. Информация о питомцах (порода, тип)
+``
+SELECT 
+    p.name as pet_name,
+    p.age,
+    b.breed_name,
+    at.name as animal_type,
+    f.brand_name as food_brand
+FROM pet p
+JOIN breed b ON p.breed_id = b.id
+JOIN animal_type at ON b.animal_type_id = at.id
+LEFT JOIN food f ON p.food_id = f.id
+WHERE p.age < 5;
+``
+
+### 2. Информация о назначениях с доп инф
+``
+SELECT 
+    e.name || ' ' || e.surname as employee_name,
+    e.profession,
+    p.name as pet_name,
+    ka.assignment_date,
+    ps.name as petshop_name
+FROM keeper_assignments ka
+JOIN employee e ON ka.keeper_id = e.id
+JOIN pet p ON ka.pet_id = p.id
+JOIN petshop ps ON p.petshop_id = ps.id
+WHERE ka.assignment_date >= CURRENT_DATE - INTERVAL '30 days';
+``
+
+### 3. Информация о клетках и кто там живет
+``
+SELECT 
+    c.id as cage_id,
+    at.name as animal_type,
+    p.name as current_pet,
+    p.age as pet_age,
+    b.breed_name,
+    ps.name as petshop_name
+FROM cage c
+LEFT JOIN animal_type at ON c.animal_type_id = at.id
+LEFT JOIN pet p ON c.current_pet_id = p.id
+LEFT JOIN breed b ON p.breed_id = b.id
+JOIN petshop ps ON c.petshop_id = ps.id
+ORDER BY ps.name, c.id;
+``
+
+### 4. Информация о клиентах и их питомцах с аксессуарами
+``
+SELECT 
+    cl.name || ' ' || cl.surname as client_name,
+    p.name as pet_name,
+    b.breed_name,
+    STRING_AGG(DISTINCT a.name, ', ') as accessories,
+    COUNT(DISTINCT pa.accessorie_id) as accessories_count
+FROM client cl
+JOIN pet p ON cl.id = p.owner_id
+JOIN breed b ON p.breed_id = b.id
+LEFT JOIN pet_accessorie pa ON p.id = pa.pet_id
+LEFT JOIN accessorie a ON pa.accessorie_id = a.id
+GROUP BY cl.id, p.id, b.breed_name
+HAVING COUNT(DISTINCT pa.accessorie_id) > 0;
+``
+
+### 5. Информация о медикаментах и питомцах, которые их получают
+``
+SELECT 
+    m.name as medication_name,
+    m.description,
+    COUNT(DISTINCT pm.pet_id) as pets_count,
+    STRING_AGG(DISTINCT p.name, ', ') as pet_names
+FROM medication m
+JOIN pet_medication pm ON m.id = pm.medication_id
+JOIN pet p ON pm.pet_id = p.id
+GROUP BY m.id
+ORDER BY pets_count DESC;
 ``
