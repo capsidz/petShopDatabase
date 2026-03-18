@@ -5,6 +5,7 @@ SELECT pg_current_wal_lsn() AS lsn_before_insert,
        pg_walfile_name(pg_current_wal_lsn()) AS wal_file_before,
        pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), '0/0')) AS wal_size_before;
 ``
+
 <img width="782" height="92" alt="image" src="https://github.com/user-attachments/assets/8e1edf61-a3df-4564-917c-d5c16e4631c5" />
 
 ### INSERT операции
@@ -42,6 +43,7 @@ SELECT pg_current_wal_lsn() AS lsn_after_insert,
        pg_walfile_name(pg_current_wal_lsn()) AS wal_file_after,
        pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), '0/0')) AS wal_size_after;
 ``
+
 <img width="743" height="121" alt="image" src="https://github.com/user-attachments/assets/1264c480-a436-4053-9fb4-72653220a292" />
 
 ## WAL после коммита
@@ -59,6 +61,7 @@ SELECT
     pg_walfile_name(pg_current_wal_lsn()) AS current_wal_file,
     pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), '0/0')) AS total_wal_size;
 ``
+
 <img width="738" height="95" alt="image" src="https://github.com/user-attachments/assets/aff19b0f-131c-4909-adf5-7137ee8f0ba1" />
 
 ## Анализ WAL после массовой операции
@@ -117,10 +120,12 @@ createdb -U postgres new_database
 ``
 psql -U postgres -d new_database < full_backup.sql
 ``
+
 <img width="315" height="577" alt="image" src="https://github.com/user-attachments/assets/808d2cd3-4f0e-4083-aca0-9c8bffbab922" />
 
 ## Создание нескольких seed
 ## Идемпотентная вставка в animal_type
+
 ``
 INSERT INTO animal_type (name) VALUES
     ('Млекопитающее'),
@@ -253,6 +258,7 @@ UNION ALL
 SELECT 'client', COUNT(*) FROM client
 ORDER BY table_name;
 ``
+
 <img width="398" height="306" alt="image" src="https://github.com/user-attachments/assets/ada8900a-97b1-46b6-8b45-583238ebf74a" />
 
 
