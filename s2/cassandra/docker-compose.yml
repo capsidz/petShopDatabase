@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  cassandra-1:
+    image: cassandra:latest
+    container_name: cassandra-1
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=PetshopCluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    volumes:
+      - cassandra-data-1:/var/lib/cassandra
+
+  cassandra-2:
+    image: cassandra:latest
+    container_name: cassandra-2
+    environment:
+      - CASSANDRA_CLUSTER_NAME=PetshopCluster
+      - CASSANDRA_SEEDS=cassandra-1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    depends_on:
+      - cassandra-1
+    volumes:
+      - cassandra-data-2:/var/lib/cassandra
+
+  cassandra-3:
+    image: cassandra:latest
+    container_name: cassandra-3
+    environment:
+      - CASSANDRA_CLUSTER_NAME=PetshopCluster
+      - CASSANDRA_SEEDS=cassandra-1
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    depends_on:
+      - cassandra-1
+    volumes:
+      - cassandra-data-3:/var/lib/cassandra
+
+volumes:
+  cassandra-data-1:
+  cassandra-data-2:
+  cassandra-data-3:

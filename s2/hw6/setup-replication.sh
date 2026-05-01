@@ -1,22 +1,23 @@
 #!/bin/bash
 
+# Ожидание запуска master
 sleep 10
 
-# Перечитываем конфиг мастера
-docker exec pg_master psql -U postgres -c "SELECT pg_reload_conf();"
+# Перезагрузка конфигурации у мастера
+docker exec pg-master psql -U postgres -c "SELECT pg_reload_conf();"
 
-# Настройка replica1
-echo "Настройка replica1..."
-docker exec pg_replica1 bash -c "
+# Настройка Replica 1
+echo "Настройка Replica 1..."
+docker exec pg-replica1 bash -c "
     rm -rf /var/lib/postgresql/data/*
-    PGPASSWORD='replicator_password' pg_basebackup -h pg_master -U replicator -D /var/lib/postgresql/data -R
+    PGPASSWORD='replicator_password' pg_basebackup -h pg-master -U replicator -D /var/lib/postgresql/data -P -R
 "
 
-# Настройка replica2
-echo "Настройка replica2..."
-docker exec pg_replica2 bash -c "
+# Настройка Replica 2
+echo "Настройка Replica 2..."
+docker exec pg-replica2 bash -c "
     rm -rf /var/lib/postgresql/data/*
-    PGPASSWORD='replicator_password' pg_basebackup -h pg_master -U replicator -D /var/lib/postgresql/data -R
+    PGPASSWORD='replicator_password' pg_basebackup -h pg-master -U replicator -D /var/lib/postgresql/data -P -R
 "
 
-echo "Готово!"
+echo "Репликация настроена!"
