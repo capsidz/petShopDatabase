@@ -47,6 +47,15 @@ VALUES (
 COMMIT;
 ```
 
+Вывод:
+```
+COMMIT;
+BEGIN
+INSERT 0 1
+INSERT 0 1
+COMMIT
+```
+
 3. Реализация Консьюмеров (Воркеров)
 Чтобы два независимых воркера конкурировали за задачи и не перехватывали одну и ту же задачу одновременно, нужно использовать конструкцию SELECT ... FOR UPDATE SKIP LOCKED. Она намертво блокирует выбранную строку для одного воркера, а второй воркер её просто "перепрыгивает" и берет следующую
 
@@ -82,8 +91,30 @@ WHERE id = :task_id; -- id задачи, полученный из прошло�
 COMMIT;
 ```
 
+Вывод (второй апдейт):
+```
+ id |     task_type      |                     payload
+----+--------------------+-------------------------------------------------
+  1 | send_welcome_email | {"email": "test@example.com", "client_id": 999}
+(1 row)
+```
+
 4. Нагрузка и мониторинг Лага
-Показывает, сколько времени (в секундах/минутах) самая «несчастная», долго ожидающая задача в статусе Ready висит незапущенной.
+```
+-- Создать 100 задач одной командой
+INSERT INTO public.tasks (task_type, payload, priority, status)
+SELECT 
+    'send_welcome_email',
+    ('{"client_id": ' || generate_series || ', "email": "test@example.com"}')::jsonb,
+    CASE WHEN random() <= 0.2 THEN 'Critical'::task_priority ELSE 'Normal'::task_priority END,
+    'Ready'::task_status
+FROM generate_series(1, 100);
+
+SELECT priority, COUNT(*) FROM tasks GROUP BY priority;
+```
+
+
+Показывает, сколько времени (в секундах/минутах) долго ожидающая задача в статусе Ready висит незапущенной.
 ```
 SELECT 
     COUNT(*) AS total_ready_tasks,
@@ -91,6 +122,14 @@ SELECT
     EXTRACT(EPOCH FROM (NOW() - MIN(created_at))) AS queue_lag_in_seconds
 FROM public.tasks
 WHERE status = 'Ready';
+```
+
+Вывод:
+```
+ total_ready_tasks |    queue_lag    | queue_lag_in_seconds
+-------------------+-----------------+----------------------
+               100 | 00:00:13.090125 |            13.090125
+(1 row)
 ```
 
 5. Пропускная способность (Throughput)
@@ -103,4 +142,12 @@ FROM public.tasks
 WHERE 
     status IN ('Completed', 'Failed') 
     AND finished_at >= NOW() - INTERVAL '10 second';
+```
+
+Вывод:
+```
+ tasks_processed | monitoring_window_seconds | tasks_per_second
+-----------------+---------------------------+------------------
+               0 |                        10 |             0.00
+(1 row)
 ```
